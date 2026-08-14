@@ -732,23 +732,22 @@
     margin-bottom: var(--space-5);
   }
 
-  /* Mosaico (masonry) via colunas — cards sem borda e sem sombra */
+  /* Mosaico (masonry) via grid — preenche na ordem de leitura, sem borda/sombra */
   .gallery-masonry {
-    column-count: 3;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 1px;
     column-gap: var(--space-2);
   }
-  @media (max-width: 900px) { .gallery-masonry { column-count: 2; } }
-  @media (max-width: 480px) { .gallery-masonry { column-count: 2; column-gap: var(--space-1); } }
+  @media (max-width: 900px) { .gallery-masonry { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .gallery-masonry { grid-template-columns: repeat(2, 1fr); column-gap: var(--space-1); } }
 
   .gallery-item {
-    break-inside: avoid;
-    margin-bottom: var(--space-2);
     overflow: hidden;
     border-radius: var(--radius-card);
     cursor: pointer;
     line-height: 0;
   }
-  @media (max-width: 480px) { .gallery-item { margin-bottom: var(--space-1); } }
   .gallery-item.is-hidden { display: none; }
 
   .gallery-item img {
@@ -1158,8 +1157,7 @@
         <p class="lede" style="margin-top:16px;">Pedimos a gentileza de confirmarem sua presença aqui no site até o dia <strong>05/09/2026</strong>. A confirmação é indispensável para o controle da nossa lista de convidados na portaria. Contamos com vocês!</p>
       </div>
       <div class="btn-row reveal" style="margin-top:var(--space-5);">
-        <!-- EDITAR: substituir pelo link/formulário real de confirmação de presença -->
-        <a class="btn btn-primary" href="#">Confirmar presença</a>
+        <a class="btn btn-primary" href="https://www.niusleneericardo.com.br/public/site/lista-convidados?id=348069" target="_blank" rel="noopener">Confirmar presença</a>
       </div>
     </div>
   </section>
@@ -1238,8 +1236,7 @@
           <h3 class="h3">Lista de Casamento</h3>
           <p>Escolha um presente especial em nossa lista.</p>
           <div class="gift-card-foot">
-            <!-- EDITAR: substituir pelo link real da lista de presentes -->
-            <a class="btn btn-outline" href="#" target="_blank" rel="noopener">
+            <a class="btn btn-outline" href="https://www.niusleneericardo.com.br/public/site/lista-presentes?id=348069" target="_blank" rel="noopener">
               Ver lista
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>
@@ -1256,12 +1253,11 @@
           </div>
           <h3 class="h3">Conta Bancária</h3>
           <p>PIX ou transferência bancária para nos ajudar a realizar nossos sonhos</p>
-          <!-- EDITAR: substituir pelos dados bancários / chave Pix reais -->
           <div class="gift-bank">
-            <p><span>Banco:</span> Itaú</p>
-            <p><span>Agência:</span> 0001</p>
-            <p><span>Conta:</span> 12345-6</p>
-            <p><span>PIX:</span> casamento@ricardoeniulsene.com</p>
+            <p><span>Banco:</span> Bradesco</p>
+            <p><span>Agência:</span> 3326</p>
+            <p><span>Conta:</span> 222056-3</p>
+            <p><span>PIX:</span> casamentoniusleneericardo@gmail.com</p>
           </div>
         </div>
 
@@ -1489,6 +1485,7 @@
       item.appendChild(img);
       item.addEventListener('click', function () { openLightbox(index); });
       galleryGrid.appendChild(item);
+      img.addEventListener('load', function () { layoutItem(item); });
     });
     if (galleryMore) {
       if (files.length <= INITIAL_COUNT) {
@@ -1497,12 +1494,38 @@
         galleryMore.classList.remove('is-done');
       }
     }
+    layoutMasonry();
   }
+
+  /* Mosaico em grid: calcula quantas linhas (de 1px) cada foto ocupa,
+     mantendo a ordem de leitura (esquerda -> direita, linha a linha). */
+  function gridGap() {
+    return window.innerWidth <= 480 ? 8 : 16;
+  }
+  function layoutItem(item) {
+    if (item.classList.contains('is-hidden')) return;
+    var img = item.querySelector('img');
+    if (!img) return;
+    var h = img.getBoundingClientRect().height;
+    if (!h) return;
+    item.style.gridRowEnd = 'span ' + (Math.ceil(h) + gridGap());
+  }
+  function layoutMasonry() {
+    var items = galleryGrid.querySelectorAll('.gallery-item');
+    for (var i = 0; i < items.length; i++) { layoutItem(items[i]); }
+  }
+  var layoutTimer = null;
+  window.addEventListener('resize', function () {
+    if (layoutTimer) clearTimeout(layoutTimer);
+    layoutTimer = setTimeout(layoutMasonry, 120);
+  });
+  window.addEventListener('load', layoutMasonry);
 
   function showAllPhotos() {
     var hidden = galleryGrid.querySelectorAll('.gallery-item.is-hidden');
     for (var i = 0; i < hidden.length; i++) { hidden[i].classList.remove('is-hidden'); }
     if (galleryMore) galleryMore.classList.add('is-done');
+    layoutMasonry();
   }
   if (galleryMoreBtn) galleryMoreBtn.addEventListener('click', showAllPhotos);
 
